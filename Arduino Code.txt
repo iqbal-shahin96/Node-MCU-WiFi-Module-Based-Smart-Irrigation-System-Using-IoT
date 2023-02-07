@@ -1,0 +1,91 @@
+#define BLYNK_PRINT  Serial  
+#include  <SPI.h>
+#include  <ESP8266WiFi.h>
+#include  <BlynkSimpleEsp8266.h>
+//#include  <SimpleTimer.h>
+#include  <DHT.h>
+#define  BLYNK_PRINT Serial
+#include  <OneWire.h>
+#include  <DallasTemperature.h>
+#define ONE_WIRE_BUS 2
+One Wire one Wire(ONE_WIRE_BUS);
+Dallas Temperature sensors (&one Wire);
+
+char auth[] ="   ";               Authentication code sent by Blynk
+char ssid[] = "   ";                       WiFi SSID
+char pass[] = "   ";                       WiFi Password
+
+#define sensor Pin 3
+int sensor State = 0;
+int last State = 0;
+#define DHTPIN 5  
+#define DHTTYPE DHT11    
+DHT dht (DHTPIN, DHTTYPE);
+Blynk Timer timer;
+void send Sensor()
+{
+  float h = dht.read Humidity();
+  float t = dht.read Temperature();
+
+  if (isnan(h)  isnan(t)) {
+    Serial.println("Failed to read from DHT sensor!");
+    return;
+  }
+ 
+  Blynk.virtual Write (V3, h);  V5 is for Humidity
+  Blynk.virtual Write (V4, t);  V6 is for Temperature
+}
+void setup()
+{
+  Serial.begin (9600);
+  Blynk.begin (auth, ssid, pass);
+   Pin Mode (sensor Pin, INPUT);
+  dht.begin ();
+
+  timer.setInterval(1000L, send Sensor);
+  Serial.begin (9600);
+  Blynk.begin (auth, ssid, pass);
+   sensors.begin ();
+}
+int sensor=0;
+void sendTemps ()
+{
+Sensor = analog Read(A0);
+sensors.request Temperatures();
+float temp = sensors.getTempCByIndex(0);
+Serial. Println (temp);
+Serial. Println (sensor);
+Blynk. Virtual Write (V1, temp);
+Blynk. Virtual Write (V2, sensor);
+delay(1000);
+}
+void loop()
+{
+  Blynk.run ();
+  timer.run ();
+  sendTemps ();
+  sensorState = digitalRead (sensorPin);
+Serial. println (sensorState);
+
+if (sensorState == 1 && lastState == 0) {
+  Serial.println("needs water, send notification");
+  Blynk.notify("Water your plants");
+  lastState = 1;
+  delay(1000);
+//send notification
+   
+  }
+  else if (sensorState == 1 && lastState == 1) {
+    //do nothing, has not been watered yet
+  Serial.println("has not been watered yet");
+  delay (1000);
+  }
+  else {
+    //st
+    Serial.println ("does not need water");
+    lastState = 0;
+    delay (1000);
+  }
+ 
+  delay (100);
+}
